@@ -36,6 +36,13 @@ class RealestateWebhook(BaseModel):
     offer_type: Annotated[str, Field(description="Offer type (SELL, RENT, CHALET)")] = "SELL"
     phone: Annotated[str | None, Field(max_length=20, description="Contact phone number")] = None
     url: Annotated[str, Field(description="Deep link to listing")]
+    # Additional specs
+    bedrooms: Annotated[int | None, Field(description="Number of bedrooms")] = None
+    bathrooms: Annotated[int | None, Field(description="Number of bathrooms")] = None
+    floors: Annotated[int | None, Field(description="Number of floors")] = None
+    age: Annotated[int | None, Field(description="Property age in years")] = None
+    frontage_width: Annotated[float | None, Field(description="Frontage width in meters")] = None
+    frontage_depth: Annotated[float | None, Field(description="Frontage depth in meters")] = None
 
     @field_validator("images", mode="before")
     @classmethod

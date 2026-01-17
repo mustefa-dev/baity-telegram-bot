@@ -120,71 +120,78 @@ class ArabicMessageFormatter(MessageFormatter):
     # Unicode RTL mark for proper text direction
     RTL = "\u200F"
 
-    OFFER_TYPE_ICONS = {
-        "SELL": "🏷 للبيع",
-        "RENT": "🏷 للإيجار",
-        "CHALET": "🏷 شاليه",
+    OFFER_TYPE_LABELS = {
+        "SELL": "للبيع",
+        "RENT": "للإيجار",
+        "CHALET": "شاليه",
     }
 
     def format(self, data: RealestateWebhook) -> str:
         """Format real estate data into an RTL Arabic Telegram message."""
-        parts = [
-            self._format_title(data.title),
-            "",
-            self._format_location(data),
-            self._format_specs(data),
-            self._format_price(data.price, data.currency),
-        ]
+        parts = []
 
+        # Header: Offer type badge + Title
+        offer_label = self.OFFER_TYPE_LABELS.get(data.offer_type.upper(), data.offer_type)
+        parts.append(f"<b>【 {offer_label} 】</b>")
+        parts.append(f"🏠 <b>{self._escape_html(data.title)}</b>")
+        parts.append("")
+
+        # Location
+        location = f"{data.city_name}، {data.district_name}"
+        if data.subdistrict_name and data.subdistrict_name != data.district_name:
+            location += f"، {data.subdistrict_name}"
+        parts.append(f"📍 {location}")
+        parts.append("")
+
+        # Price (prominent)
+        parts.append(self._format_price(data.price, data.currency))
+        parts.append("")
+
+        # Specs grid
+        specs = []
+        specs.append(f"📐 المساحة: {data.area:,.0f} م²")
+
+        if data.bedrooms:
+            specs.append(f"🛏 غرف النوم: {data.bedrooms}")
+        if data.bathrooms:
+            specs.append(f"🚿 الحمامات: {data.bathrooms}")
+        if data.floors:
+            specs.append(f"🏢 الطوابق: {data.floors}")
+        if data.age:
+            specs.append(f"📅 العمر: {data.age} سنة")
+        if data.frontage_width and data.frontage_depth:
+            specs.append(f"📏 الواجهة: {data.frontage_width}×{data.frontage_depth} م")
+
+        parts.extend(specs)
+        parts.append("")
+
+        # Category
+        parts.append(f"🏷 {data.category} - {data.subcategory}")
+
+        # Description (if exists)
         if data.description:
-            parts.extend(["", self._format_description(data.description)])
+            parts.append("")
+            desc = self._escape_html(data.description)
+            if len(desc) > self.max_description_length:
+                desc = desc[:self.max_description_length].rsplit(" ", 1)[0] + "..."
+            parts.append(f"📝 {desc}")
 
-        parts.extend([
-            "",
-            self._format_category(data.category, data.subcategory),
-            self._format_offer_type(data.offer_type),
-        ])
-
+        # Contact
         if self.include_phone and data.phone:
-            parts.append(self._format_phone(data.phone))
+            parts.append("")
+            parts.append(f"📞 للتواصل: {data.phone}")
 
-        parts.extend(["", self._format_link(data.url)])
+        # Link
+        parts.append("")
+        parts.append(f'🔗 <a href="{data.url}">عرض التفاصيل في التطبيق</a>')
 
         # Add RTL mark at the start of each line for proper Arabic display
         return "\n".join(f"{self.RTL}{part}" if part else "" for part in parts)
 
-    def _format_title(self, title: str) -> str:
-        """Format the listing title with emoji."""
-        escaped = self._escape_html(title)
-        return f"🏠 <b>{escaped}</b>"
-
-    def _format_location(self, data: RealestateWebhook) -> str:
-        """Format location information in Arabic."""
-        location = f"{data.city_name}، {data.district_name}"
-        if data.subdistrict_name and data.subdistrict_name != data.district_name:
-            location += f"، {data.subdistrict_name}"
-        return f"📍 {location}"
-
-    def _format_specs(self, data: RealestateWebhook) -> str:
-        """Format specifications in Arabic."""
-        return f"📐 {data.area:,.0f} م²"
-
-    def _format_category(self, category: str, subcategory: str) -> str:
-        """Format category information in Arabic."""
-        return f"🏢 {category} - {subcategory}"
-
-    def _format_link(self, url: str) -> str:
-        """Format the link to the listing in Arabic."""
-        return f'🔗 <a href="{url}">عرض التفاصيل</a>'
-
-    def _format_phone(self, phone: str) -> str:
-        """Format phone number in Arabic."""
-        return f"📞 {phone}"
-
     def _format_price(self, price: float, currency: str) -> str:
         """Format price with currency in Arabic."""
         if price <= 0:
-            return "💰 السعر عند الطلب"
+            return "💰 <b>السعر عند الطلب</b>"
         formatted_price = f"{price:,.0f}"
         currency_ar = {"IQD": "د.ع", "USD": "$"}.get(currency, currency)
-        return f"💰 {formatted_price} {currency_ar}"
+        return f"💰 <b>{formatted_price} {currency_ar}</b>"
