@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Main bot application
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: baity-telegram-bot
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - BOT_TOKEN=${BOT_TOKEN}
+      - WEBHOOK_API_KEY=${WEBHOOK_API_KEY}
+      - CITY_CHANNELS=${CITY_CHANNELS}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - baity-network
+
+  # Nginx reverse proxy (optional - for SSL)
+  nginx:
+    image: nginx:alpine
+    container_name: baity-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - bot
+    networks:
+      - baity-network
+    profiles:
+      - with-nginx
+
+networks:
+  baity-network:
+    driver: bridge
