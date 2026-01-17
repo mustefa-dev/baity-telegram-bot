@@ -25,17 +25,15 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
 
     # Security
-    WEBHOOK_API_KEY: str = Field(..., min_length=16)
+    WEBHOOK_API_KEY: str = Field(default="baity-webhook-secret-key-2024", min_length=16)
 
     # Telegram
-    BOT_TOKEN: str = Field(..., min_length=40)
+    BOT_TOKEN: str = Field(default="8139940477:AAG_q-ghGtDzvVePKZcSQZuDXYu2NDRRAu0", min_length=40)
 
     # City to Channel mapping (loaded from env as JSON or configured here)
     # Format: {"1": "@channel1", "2": "@channel2"}
     CITY_CHANNELS: dict[int, str] = Field(default_factory=lambda: {
-        1: "@baghdad_realestate",
-        2: "@basra_realestate",
-        3: "@najaf_realestate",
+        1: "@mu_baghdad_baity",
     })
 
     # Logging
