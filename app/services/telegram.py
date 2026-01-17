@@ -15,7 +15,7 @@ from app.core.logging import get_logger
 from app.schemas.realestate import RealestateWebhook
 from app.schemas.response import WebhookResponse, WebhookStatus
 from app.services.base import MessageService
-from app.services.message_formatter import MessageFormatter
+from app.services.message_formatter import ArabicMessageFormatter, MessageFormatter
 
 logger = get_logger(__name__)
 
@@ -33,7 +33,7 @@ class TelegramService(MessageService):
         super().__init__()
         self._bot_token = bot_token or settings.BOT_TOKEN
         self._bot: Bot | None = None
-        self._formatter = formatter or MessageFormatter()
+        self._formatter = formatter or ArabicMessageFormatter()
         self._max_retries = max_retries or settings.MAX_RETRIES
         self._retry_delay = retry_delay or settings.RETRY_DELAY
 
